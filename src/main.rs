@@ -4,31 +4,30 @@ use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
 
 fn setup_ncurses() {
-    initscr(); // Initialize the ncurses library
-    cbreak(); // Disable line buffering
-    noecho(); // Disable automatic echoing of typed characters
-    curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE); // Hide the cursor
-    start_color(); // Enable color support
+    initscr();
+    cbreak();
+    noecho();
+    curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+    start_color();
 
-    // Define colors if needed
     init_pair(1, COLOR_WHITE, COLOR_BLACK);
     init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+    mvprintw(0, 0, "...");
 }
 
 fn update_hardware_data(fan_rpm: f64, cpu_temp: f64, gpu_temp: f64) {
-    erase(); // Clear the entire screen
+    erase();
 
-    let fan_str = format!("Fan: {:.2} rpm", fan_rpm);
-    let cpu_temp_str = format!("CPU die temperature: {:.2} C", cpu_temp);
-    let gpu_temp_str = format!("GPU die temperature: {:.2} C", gpu_temp);
+    let fan_str: String = format!("Fan speed: {:.2} rpm", fan_rpm);
 
-    // Display the hardware data at specific positions
-    mvprintw(0, 0, "---------------------------");
-    mvprintw(1, 0, &fan_str);
-    mvprintw(2, 0, &cpu_temp_str);
-    mvprintw(3, 0, &gpu_temp_str);
+    let cpu_temp_str = format!("CPU temperature: {:.2}° C", cpu_temp);
+    let gpu_temp_str = format!("GPU temperature: {:.2}° C", gpu_temp);
 
-    refresh(); // Refresh the screen
+    mvprintw(1, 0, &cpu_temp_str);
+    mvprintw(2, 0, &gpu_temp_str);
+    mvprintw(3, 0, &fan_str);
+
+    refresh();
 }
 
 fn main() {
@@ -59,7 +58,7 @@ fn main() {
             if line.contains("**** SMC sensors ****") {
                 found_section = true;
             } else if line.contains("****") && found_section {
-                break; // Reached end of relevant section
+                break;
             } else if found_section {
                 if let Some(captures) = fan_re.captures(&line) {
                     fan_rpm = captures[1].parse::<f64>().unwrap();
@@ -80,9 +79,6 @@ fn main() {
         }
     }
 
-    // Sleep for some time to observe the changes
     std::thread::sleep(std::time::Duration::from_secs(1));
-
-    // Restore terminal settings and clean up ncurses
     endwin();
 }
